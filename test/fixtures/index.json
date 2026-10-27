@@ -1,0 +1,252 @@
+{
+ "version": 1,
+ "site": "https://www.anahita.io",
+ "api": "https://www.anahita.io/api/anahita.json",
+ "sources": [
+  {
+   "key": "services",
+   "title": "Anahita Services",
+   "side": "Server",
+   "repo": "anahitasocial/anahita-services"
+  },
+  {
+   "key": "web",
+   "title": "Anahita Web",
+   "side": "Apps",
+   "repo": "anahitasocial/anahita-web"
+  }
+ ],
+ "pages": [
+  {
+   "source": "services",
+   "slug": "README",
+   "title": "Documentation",
+   "group": null,
+   "url": "https://www.anahita.io/docs/services/",
+   "sections": [
+    {
+     "id": "",
+     "heading": null,
+     "level": 1,
+     "markdown": "Documentation for anahita-services, the Go microservices behind Anahita."
+    },
+    {
+     "id": "where-to-begin",
+     "heading": "Where to begin",
+     "level": 2,
+     "markdown": "Ways in, by what you are doing. Each is a short page of links, in the\norder to read them.\n\n| To | Read |\n| --- | --- |\n| Understand the ideas behind it | [Why Anahita](https://www.anahita.io/docs/services/why-anahita/) |\n| Put an instance on the web | [Setting up](https://www.anahita.io/docs/services/setting-up/) |\n| Change how it looks, what it says and what it allows | [Customising](https://www.anahita.io/docs/services/customising/) |\n| Run it from day to day: upgrades, storage, accounts, reports | [Operating](https://www.anahita.io/docs/services/operating/) |\n| Write an app or a service against it | [Developing](https://www.anahita.io/docs/services/developing/) |\n| Call the services from your own, over gRPC | [Services over gRPC](https://www.anahita.io/docs/services/grpc/) |\n| Know what the licences allow | [Licensing](https://www.anahita.io/docs/services/licensing/) |\n\nChanging Anahita's own code? Begin with [AGENTS.md](https://github.com/anahitasocial/anahita-services/blob/main/AGENTS.md).\n\nAsking an AI agent about Anahita? Add the MCP server\n`https://gitmcp.io/anahitasocial/anahita-services` to it, and\n`https://gitmcp.io/anahitasocial/anahita-web` for the web app.\n[GitMCP](https://gitmcp.io) serves these docs and the code, read-only."
+    }
+   ]
+  },
+  {
+   "source": "services",
+   "slug": "the-graph",
+   "title": "The graph",
+   "group": "Concepts",
+   "url": "https://www.anahita.io/docs/services/the-graph/",
+   "sections": [
+    {
+     "id": "",
+     "heading": null,
+     "level": 1,
+     "markdown": "Everything in Anahita is a node, and every relationship between two things\nis an edge. A person, a group, a post, a hashtag, a location and a feed are\nnodes; following, liking, tagging, citing and saving are edges. This page is\nabout what the two are, how their types are named, and every type there is.\n\n![A person follows a group, likes a post on its profile, and keeps a custom\nfeed on their home page; a hashtag and a location are tagged on the post.\nEach arrow is an edge; the dashed one is the post's owner_id.](https://www.anahita.io/docs-assets/services/images/graph.svg)"
+    },
+    {
+     "id": "why-one-graph",
+     "heading": "Why one graph",
+     "level": 2,
+     "markdown": "A school's community holds people, groups, events, notes, articles, photos\nand videos, and they are all connected: who follows what, who is in which\nphoto, which article cites which note, which posts are about `#seeds`. Kept\nas one graph, each of these is read, permitted, searched and suggested in\nthe same way:\n\n- **One rule for who may see what,** applied in one place, to every kind of\n  node ([Who may see a node](#who-may-see-a-node)).\n- **One shape for search and suggestions** to walk: \"posts liked by people\n  you follow\" and \"people cited by people you follow\" are the same walk\n  over different edges ([How things are found](https://www.anahita.io/docs/services/how-things-are-found/)).\n- **Something new needs no new tables.** A custom feed is a node, and\n  keeping it on the home page is an edge\n  ([A feed is a node](https://www.anahita.io/docs/services/feeds/#a-feed-is-a-node)). A post from Mastodon is\n  a node too, so following it, liking it and blocking its author need\n  nothing new.\n\nThe graph is owned by one service, `graph-grpc-service`. Every other service\nreads and writes it through that one, over gRPC\n([Architecture](https://www.anahita.io/docs/services/architecture/#components))."
+    },
+    {
+     "id": "nodes",
+     "heading": "Nodes",
+     "level": 2,
+     "markdown": "A node is a row of the `nodes` table. Every kind shares it; what a column\nmeans can depend on the kind, and a column a kind has no use for is left\nempty.\n\n| Column | What |\n| --- | --- |\n| `id` | Its number on this installation |\n| `uuid` | What another server is told it is called: random, and never changed |\n| `type` | What kind of node it is ([How a type is named](#how-a-type-is-named)) |\n| `name`, `alias`, `body` | What it is called, its handle or address, and what it says |\n| `owner_id` | The profile it is on: the person or group a post was posted to. On a profile, empty |\n| `created_by` | Who made it, who need not be its owner: a person's post in a group is owned by the group |\n| `parent_id`, `root_id` | On a reply, what it answers and the post at the top of its thread. On a repost, the original |\n| `quote_id` | On a note that quotes a post, that post |\n| `access` | Who may see it ([Who may see a node](#who-may-see-a-node)) |\n| `meta` | What one kind keeps that the others do not, as JSON: a feed's definition, for one |\n| `uri`, `origin_domain` | What it is called on the server it came from, when it came from another one |\n| `follower_count`, `vote_up_count`, `comment_count`, `citation_count`, \u2026 | Counts the graph keeps in step with the edges, so that a list does not count each time it is read |"
+    },
+    {
+     "id": "how-a-type-is-named",
+     "heading": "How a type is named",
+     "level": 2,
+     "markdown": "A type is a name from a fixed grammar, read left to right from the most\ngeneral to the most particular:\n\n```\nnode.<family>.<service>.<entity>.v1      node.actor.person-service.person.v1\nedge.<family>.<name>.v1                  edge.actor.follow.v1\n```\n\n- **The family** is what everything of that kind has in common. Every\n  `node.actor.` can be followed, blocked and posted to; every `node.medium.`\n  is a post, with an owner, an author and an audience. Code that asks\n  \"is this a profile?\" asks whether the type begins with `node.actor.`.\n- **The service** is the one that answers for that kind of node. A group's\n  is still `group-service`, an older name, because a type is never renamed.\n- **The version** is there because a type is stored for good: in every row,\n  in every edge's `node_a_type` and `node_b_type`, and in what other\n  services keep. A change to what a type means would be a new version, read\n  beside the old, never an edit of the old."
+    },
+    {
+     "id": "every-kind-of-node",
+     "heading": "Every kind of node",
+     "level": 2,
+     "markdown": "| Family | Type | What |\n| --- | --- | --- |\n| Actors | `node.actor.person-service.person.v1` | A person with an account here |\n| | `node.actor.group-service.group.v1` | A group, which people follow and post in |\n| | `node.actor.actor-service.event.v1` | An event, which people say they are going to; often hosted by a group |\n| | `node.actor.actor-service.website.v1` | A website's feed, verified, as a profile to follow ([Websites](https://www.anahita.io/docs/services/websites/)) |\n| | `node.actor.activitypub-service.person.v1` | Somebody on a server of the fediverse |\n| | `node.actor.atproto-service.person.v1` | Somebody on Bluesky |\n| Media | `node.medium.text-service.note.v1` | A note: a short post, and the kind that arrives from another server |\n| | `node.medium.text-service.article.v1` | An article: long, with a title; what a website posts for each item of its feed |\n| | `node.medium.text-service.topic.v1` | A topic: a conversation with a title, started on a profile, with replies under it |\n| | `node.medium.photo-service.photo.v1` | A photo post, of one or more photos ([Photo posts](https://www.anahita.io/docs/services/photos/)) |\n| | `node.medium.video-service.video.v1` | A video post ([Videos](https://www.anahita.io/docs/services/videos/)) |\n| Tags | `node.tag.hashtag-service.hashtag.v1` | A hashtag ([Hashtags and locations](https://www.anahita.io/docs/services/hashtags/)) |\n| | `node.tag.location-service.location.v1` | A location posts are tagged with |\n| Feeds | `node.feed.feed-service.generator.v1` | A custom feed: what it shows, kept in its `meta` ([Custom feeds](https://www.anahita.io/docs/services/feeds/)) |\n| Reposts | `node.base.repost-service.repost.v1` | A repost: its `parent_id` is the original, and its owner the profile that reposted it |\n\nA reply is a node of the same type as a note, with a `parent_id`. People\nelsewhere have types of their own, not the person type with a flag:\nwhatever lists the people of this installation by type then leaves them out\nwithout having to be told."
+    },
+    {
+     "id": "edges",
+     "heading": "Edges",
+     "level": 2,
+     "markdown": "An edge is a row of the `edges` table: a type, and two nodes, `node_a` and\n`node_b`, with each one's type beside its id. It points from `a` to `b`, and\nreads as a sentence: *Ana* **follows** *the library*.\n\n| Column | What |\n| --- | --- |\n| `type` | What the relationship is |\n| `node_a_id`, `node_a_type` | Where it is from |\n| `node_b_id`, `node_b_type` | Where it is to |\n| `meta` | What it says beyond that, as JSON: whether a tag of a person has been approved, for one |\n| `ordering` | Its place among its siblings, for the ones kept in an order somebody chose: feeds on the home page |\n| `created_by`, `created_at` | Who made it, and when; what fades with time is counted from this |\n\nThere is one edge of a type between the same two nodes, never two\n(`uc_edge`): liking a post twice is liking it."
+    },
+    {
+     "id": "every-kind-of-edge",
+     "heading": "Every kind of edge",
+     "level": 2,
+     "markdown": "| Type | From | To | Means |\n| --- | --- | --- | --- |\n| `edge.actor.follow.v1` | A profile | A profile | Follows it |\n| `edge.actor.follow-request.v1` | A profile | A profile | Has asked to follow it, and is waiting for an answer |\n| `edge.actor.block.v1` | A profile | A profile | Blocks it: neither sees the other |\n| `edge.actor.admin.v1` | A person | A group or an event | Is one of its administrators |\n| `edge.actor.host.v1` | A group | An event | Hosts it; what puts it on the group's list of events |\n| `edge.actor.invite.v1` | A person | A profile | Was invited to follow it, by `created_by` |\n| `edge.base.voteup.v1` | A person | A post | Likes it |\n| `edge.base.bookmark.v1` | A person | A post | Saved it. Private: nobody else is told, the post's author included, and nothing is counted from it |\n| `edge.base.subscription.v1` | A person | A post or a profile | Is notified of what happens to it ([Notifications](https://www.anahita.io/docs/services/notifications/)) |\n| `edge.tag.hashtag.v1` | A hashtag | A post | The post carries the hashtag |\n| `edge.tag.location.v1` | A location | A post | The post is tagged with the location |\n| `edge.tag.mention.v1` | A profile | A post | The post names the profile: \"this is for you\" |\n| `edge.tag.person.v1` | A person | A photo or video post | The person is in it, tagged by its author; shown once they approve |\n| `edge.medium.citation.v1` | A post | A post | The first shows the second within its text, as an article or a topic does an address on a line of its own |\n| `edge.medium.hidden-reply.v1` | A post | A reply | The reply is hidden from the post's thread; the reply stays its author's |\n| `edge.feed.pin.v1` | A person | A custom feed | Keeps it on their home page, in the place its `ordering` says |"
+    },
+    {
+     "id": "who-may-see-a-node",
+     "heading": "Who may see a node",
+     "level": 2,
+     "markdown": "Every node has an audience, its `access`: `public`, `registered`,\n`followers`, `leaders`, `mutuals`, `admins` or `myself`, each measured\nagainst the profile the node is on, not whoever wrote it\n([The audiences](https://www.anahita.io/docs/services/privacy/#the-audiences)). A block, either way, hides\neverything.\n\nThe graph applies these to every read, whatever asked: a list, a search, a\nsuggestion, a feed. What a service is sent is already what the viewer may\nsee, so no service has a rule of its own to get wrong\n([Permissions](https://www.anahita.io/docs/services/permissions/))."
+    },
+    {
+     "id": "nodes-from-other-servers",
+     "heading": "Nodes from other servers",
+     "level": 2,
+     "markdown": "A person on Mastodon or Bluesky, and what they post, are nodes here once\nsomebody here has met them: looked them up, followed them, or been replied\nto. Each has a `uri`, what it is called where it lives, and an\n`origin_domain`; a node without a `uri` was made here. See\n[What a node is called elsewhere](https://www.anahita.io/docs/services/architecture/#what-a-node-is-called-elsewhere)\nand [Federation](https://www.anahita.io/docs/services/federation/)."
+    },
+    {
+     "id": "events-are-not-types",
+     "heading": "Events are not types",
+     "level": 2,
+     "markdown": "What happens to the graph is told to the services that care over the bus,\nRabbitMQ, by events with names in the same grammar and an action at the end:\n`node.medium.text-service.note.added.v1`, `edge.follow.socialgraph.added.v1`.\nThese are the names of things that happened, not of nodes or edges, and are\nnever stored as a type. They are listed in `anahita-libs/event`\n([Architecture](https://www.anahita.io/docs/services/architecture/#components))."
+    },
+    {
+     "id": "where-the-code-is",
+     "heading": "Where the code is",
+     "level": 2,
+     "markdown": "| What | Where |\n| --- | --- |\n| The two tables | `migration-job/schema/init.sql` |\n| The type names | `anahita-libs/constants/entity_types.go`, and beside the code of the kind (`anahita-libs/feeds`, `anahita-libs/videos`, `text-service/constants`) |\n| The audiences | `anahita-libs/constants/access.go` |\n| Every read and write | `graph-grpc-service/data/repositories` |\n| How other services call it | `anahita-libs/proto/graphpb`, over gRPC ([Services over gRPC](https://www.anahita.io/docs/services/grpc/)) |"
+    }
+   ]
+  },
+  {
+   "source": "services",
+   "slug": "how-things-are-found",
+   "title": "How things are found",
+   "group": "Concepts",
+   "url": "https://www.anahita.io/docs/services/how-things-are-found/",
+   "sections": [
+    {
+     "id": "",
+     "heading": null,
+     "level": 1,
+     "markdown": "There are six ways somebody comes across a post or a profile on Anahita:\ntheir home page, a custom feed, search, suggestions of whom to follow, and\nwhat is trending. This page is how they fit together, and what each one\norders by. The pages it links to have the numbers."
+    },
+    {
+     "id": "six-ways-in",
+     "heading": "Six ways in",
+     "level": 2,
+     "markdown": "| Way | What it shows | In what order | Page |\n| --- | --- | --- | --- |\n| The home page | What the people, groups and events somebody follows posted | Newest first, always | [Custom feeds](https://www.anahita.io/docs/services/feeds/#the-home-page) |\n| A custom feed | What a person chose: sources, hashtags, words, locations, languages, a distance | Newest first | [Custom feeds](https://www.anahita.io/docs/services/feeds/) |\n| Search | People, groups, events, posts and shared feeds that match the words | Most relevant, or most recent | [Search](https://www.anahita.io/docs/services/search/) |\n| A hashtag's or a location's posts | The posts that carry it | Most relevant, without the words | [Hashtags and locations](https://www.anahita.io/docs/services/hashtags/#a-hashtags-and-a-locations-posts) |\n| Suggestions | People, groups and events to follow | By the reasons for each, scored | [Recommendations](https://www.anahita.io/docs/services/recommendations/) |\n| Trending | The hashtags and locations the most profiles used lately | By how many profiles, each once | [Trending](https://www.anahita.io/docs/services/hashtags/#trending) |\n\nThe home page and custom feeds are by date and nothing else. Only search,\na tag's posts and suggestions rank, and every one of them says why."
+    },
+    {
+     "id": "what-they-share",
+     "heading": "What they share",
+     "level": 2,
+     "markdown": "Every way in walks the same [graph](https://www.anahita.io/docs/services/the-graph/), over the same edges,\nand reads only what the viewer may see.\n\n| Sign | The edges and columns | Used by |\n| --- | --- | --- |\n| Who somebody follows | `edge.actor.follow.v1` | Every one: the home page is made of it; search puts what you follow higher; suggestions look at whom your follows follow |\n| What people found useful | Likes (`edge.base.voteup.v1`), saves (`edge.base.bookmark.v1`, private: never shown to anybody), replies, reposts and quotes | Search's standing; `you_engaged` in suggestions |\n| What people cite | `edge.medium.citation.v1`, counted once for each person who cites | Search's standing; `cited` and `cited_by_leaders` in suggestions |\n| Who is in a photo or a video together | `edge.tag.person.v1`, approved tags only | `pictured_with_followed` in search; `pictured_with_you` and `pictured_with_leaders` in suggestions |\n| What a post is about | `edge.tag.hashtag.v1`, `edge.tag.location.v1` | Custom feeds' filters; search; `shared_interest` in suggestions; trending |\n| How lately a profile was active | When it last posted, or was visited | Suggestions put the quiet last, and leave out those quiet longer than the reader chose |\n\nA sign is never more than one of several. A logarithm keeps one post liked\na thousand times from burying everything else in search, and every reason\nfor a suggestion has a most it can add."
+    },
+    {
+     "id": "what-is-never-used",
+     "heading": "What is never used",
+     "level": 2,
+     "markdown": "What somebody looked at, for how long, what they scrolled past, what they\nclicked on, where they were when they did: none of it is recorded, so none\nof it can rank anything. Each sign above is something a person chose to do\nand could see themselves doing: follow, like, save, reply, cite, tag. There\nare no hidden signals, and no profile of interests is built from behaviour\nto rank by ([Why Anahita](https://www.anahita.io/docs/services/why-anahita/))."
+    },
+    {
+     "id": "interest-fades-usefulness-does-not",
+     "heading": "Interest fades; usefulness does not",
+     "level": 2,
+     "markdown": "A guide a library wrote years ago is as useful as one from this week. So\nnothing is pushed down for being old. What may fade is **interest**: each\nlike, save, reply or follow is counted by when it happened, halved every\n`half_life_days`, a year by default. A guide that people saved this month\nstands as high as a new post saved as often.\n\nA citation does not fade. Citing takes effort and is lasting, and what is\ncited stays useful. See\n[Old and useful counts as much as new](https://www.anahita.io/docs/services/search/#old-and-useful-counts-as-much-as-new)."
+    },
+    {
+     "id": "each-persons-own-weights",
+     "heading": "Each person's own weights",
+     "level": 2,
+     "markdown": "Each person who is signed in can change how much each sign counts, for them\nalone, and nobody else's results change:\n\n- **In search,** six weights: likes, saves, replies, followers, citations,\n  and what they follow ([Their own weights](https://www.anahita.io/docs/services/search/#their-own-weights)),\n  and two choices, *Profiles I follow first* and *Newer results first*.\n- **In suggestions,** a weight for each reason, from 0, not used, to 10;\n  whether what they liked and wrote may be used at all (`use_activity`);\n  and how lately somebody must have been active to be suggested\n  ([Each person's own weights](https://www.anahita.io/docs/services/recommendations/#each-persons-own-weights)).\n- **Custom feeds** are the rest: a person who wants a different feed makes\n  one, and calls it what they like."
+    },
+    {
+     "id": "the-operators-numbers",
+     "heading": "The operator's numbers",
+     "level": 2,
+     "markdown": "Every default is the installation's to change:\n\n| What | Where |\n| --- | --- |\n| Search: the points for a match, the weights of each sign, `half_life_days` | `graph-grpc-defaults/search_ranking.json`, read again when it changes ([Tuning it](https://www.anahita.io/docs/services/search/#tuning-it)) |\n| Suggestions: the score of each reason and its most | `recommendation-service/constants`, in the code: a change is a new build |\n| Trending: the window | `TRENDING_WINDOW` ([Configuration](https://www.anahita.io/docs/services/configuration/#trending)) |\n\nA newsroom may want interest to fade in a month; a library, a school or a\nresearch group in a year or more, or never."
+    }
+   ]
+  },
+  {
+   "source": "web",
+   "slug": "README",
+   "title": "Documentation",
+   "group": null,
+   "url": "https://www.anahita.io/docs/web/",
+   "sections": [
+    {
+     "id": "",
+     "heading": null,
+     "level": 1,
+     "markdown": "Documentation for Anahita Web, the web app for Anahita. The server side,\nincluding every setting an operator changes without rebuilding this app, is\ndocumented in [anahita-services](https://github.com/anahitasocial/anahita-services).\n\nTo set up a whole site, make it your own, keep it running or build on it,\nbegin with the four ways in that the services' docs give:\n[Where to begin](https://www.anahita.io/docs/services/#where-to-begin).\n\nAsking an AI agent about the web app? Add the MCP server\n`https://gitmcp.io/anahitasocial/anahita-web` to it. [GitMCP](https://gitmcp.io)\nserves these docs and the code, read-only."
+    }
+   ]
+  },
+  {
+   "source": "web",
+   "slug": "configuration",
+   "title": "Configuration",
+   "group": null,
+   "url": "https://www.anahita.io/docs/web/configuration/",
+   "sections": [
+    {
+     "id": "",
+     "heading": null,
+     "level": 1,
+     "markdown": "Every environment variable the app reads, and why most settings are not here."
+    },
+    {
+     "id": "how-configuration-works",
+     "heading": "How configuration works",
+     "level": 2,
+     "markdown": "The app is configured with environment variables, set in a `.env` file in\ndevelopment or in the host's settings when it is built for production.\n`.env.example` lists them all with notes. Copy it to `.env` to start.\n\nThree things follow from the app being built with Create React App:\n\n- **Only `PUBLIC_URL`, `NODE_ENV` and variables beginning `REACT_APP_` reach\n  the app.** Anything else is invisible to it, whatever its name.\n- **Values are compiled into the bundle when it is built.** Changing one means\n  restarting `yarn start`, or rebuilding for production.\n- **Anybody can read them.** They end up in JavaScript that every visitor\n  downloads, so none of them may hold a secret.\n\nCreate React App reads these files, highest priority first. No other file name\nis read:\n\n| File | Loaded |\n| --- | --- |\n| `.env.development.local`, `.env.production.local` | For `yarn start` and `yarn build` respectively |\n| `.env.development`, `.env.production` | Likewise |\n| `.env.local` | Always, except when running tests |\n| `.env` | Always |"
+    },
+    {
+     "id": "variables",
+     "heading": "Variables",
+     "level": 2,
+     "markdown": ""
+    },
+    {
+     "id": "identity",
+     "heading": "Identity",
+     "level": 3,
+     "markdown": "| Variable | Description |\n| --- | --- |\n| `REACT_APP_NAME` | The installation's name. Shown throughout the app and used as the page title in `public/index.html` |\n| `REACT_APP_DESCRIPTION` | A one-line description, used as the page's meta description |\n| `PUBLIC_URL` | Where the app is served from, for example `http://localhost:3000` |"
+    },
+    {
+     "id": "back-end",
+     "heading": "Back end",
+     "level": 3,
+     "markdown": "| Variable | Description |\n| --- | --- |\n| `REACT_APP_API_BASE_URL` | The anahita-services gateway, for example `http://localhost` in development or `https://api.example.com` in production. Every API call goes here, so this decides which installation the app belongs to |"
+    },
+    {
+     "id": "optional",
+     "heading": "Optional",
+     "level": 3,
+     "markdown": "| Variable | Description |\n| --- | --- |\n| `REACT_APP_NOTIFICATIONS_CHECK_INTERVAL` | The longest wait between two checks of the bell's count, in milliseconds: `300000` (5 minutes) when unset. The bell asks sooner after something new, and at once when the tab is looked at again. See [Notifications](https://www.anahita.io/docs/web/architecture/#notifications) |\n| `REACT_APP_LANGUAGE` | The language for a visitor whose browser asks for none the app has: `en-CA`, `en-US`, `fr-FR`, `fr-CA`, `de-DE`, `es-419` or `pt-BR`. Unset, or anything else, is `en-CA`. See [Languages](https://www.anahita.io/docs/web/customising/#languages) |\n| `REACT_APP_ASSETS` | The theme to use: the name of a directory under `src/assets/`. Unset uses `src/assets/default`. See [Themes](https://www.anahita.io/docs/web/customising/#themes) |\n| `REACT_APP_ANALYTICS` | Page-view analytics: `plausible`, `umami` or `matomo`. Unset means off: no script is loaded and nothing leaves the browser |\n| `REACT_APP_ANALYTICS_URL` | Where that analytics service is, for example `https://stats.example.org` |\n| `REACT_APP_ANALYTICS_SITE_ID` | The site as that service knows it: the domain for Plausible, the website id for Umami, the numeric site id for Matomo |\n| `REACT_APP_MAP_TILE_URL` | Where map tiles come from, in Leaflet's `{s}/{z}/{x}/{y}` form. Unset uses OpenStreetMap's public tile server |\n| `REACT_APP_MAP_TILE_ATTRIBUTION` | The credit shown on the map, as the tile server's licence requires. Unset credits OpenStreetMap |\n| `REACT_APP_LOCATION_FIXED_COUNTRY` | Pins every new location to one country, as a two-letter code such as `CA`, and hides the country field |\n| `REACT_APP_LOCATION_FIXED_STATE_PROVINCE` | Pins new locations to one state or province, as a short code such as `BC`, and hides that field |\n| `REACT_APP_LOCATION_FIXED_CITY` | Pins new locations to one city, as free text, and hides that field |\n\nLeave the location variables unset to let people choose freely. That is the\nusual case."
+    },
+    {
+     "id": "third-parties-the-app-talks-to",
+     "heading": "Third parties the app talks to",
+     "level": 3,
+     "markdown": "With the defaults, the browser contacts one service besides your own API:\n**OpenStreetMap's tile server**, whenever a map is shown. Point\n`REACT_APP_MAP_TILE_URL` at your own tiles to avoid it. A link to YouTube,\nVimeo or any other site is shown as its card, whose picture is this\ninstallation's own copy; nothing from that site is loaded until somebody\nfollows the link.\n\nAnalytics is off unless you configure it, and all three supported services can\nbe self-hosted. The app loads no fonts or scripts from a CDN."
+    },
+    {
+     "id": "build",
+     "heading": "Build",
+     "level": 3,
+     "markdown": "| Variable | Description |\n| --- | --- |\n| `ESLINT_NO_DEV_ERRORS` | `true` shows lint errors as warnings in development instead of failing the build |\n| `DISABLE_ESLINT_PLUGIN` | `true` skips linting during the build entirely, which is faster for production builds |"
+    },
+    {
+     "id": "settings-that-live-on-the-server",
+     "heading": "Settings that live on the server",
+     "level": 2,
+     "markdown": "Anything an operator should be able to change without rebuilding the app is\nconfigured in anahita-services. The app reads it at run time, mostly from the\nserver's NodeInfo document (`/.well-known/nodeinfo`):\n\n| Setting | Where it is set |\n| --- | --- |\n| Whether people can sign up, and how | `REGISTRATION_MODE` |\n| Support email, phone and website | `SUPPORT_EMAIL`, `SUPPORT_PHONE`, `SUPPORT_WEBSITE` |\n| Who may create groups and send invitations | `GROUPS_FROM`, `INVITES_FROM` |\n| What people who are not signed in can read | `SITE_READ_ACCESS`: everything public, only the start of it, or nothing. The app shows them a notice, or on a members-only site a way in, in place of every page |\n| Whether anything new may be public | `MIN_CONTENT_ACCESS`. The app stops offering \"Public\" where it may not |\n| Who may post, comment and like by default | `graph-grpc-defaults/actor_features` |\n\nThe two privacy settings, what each does to visitors and how to check them are\ndescribed in anahita-services under\n[Privacy](https://www.anahita.io/docs/services/privacy/).\n\nSome older variables are no longer read:\n\n| Variable | Replaced by |\n| --- | --- |\n| `REACT_APP_SIGNUP_CLOSED` | `REGISTRATION_MODE` on the server |\n| `REACT_APP_GOOGLE_MAPS_API_KEY` | Nothing. Maps use Leaflet with OpenStreetMap |\n| `REACT_APP_THEME` | `REACT_APP_ASSETS` |\n| `SUPPORT_EMAIL` and the other `SUPPORT_*` | The server's `SUPPORT_*`. Without the `REACT_APP_` prefix these never reached the app |"
+    },
+    {
+     "id": "where-the-code-is",
+     "heading": "Where the code is",
+     "level": 2,
+     "markdown": "| Variable | Read in |\n| --- | --- |\n| `REACT_APP_API_BASE_URL` | `src/api/index.js`, `src/api/publicClient.js`, and the helpers in `src/utils/` that build file addresses |\n| `REACT_APP_NAME`, `REACT_APP_DESCRIPTION` | `src/components/HeaderMeta.jsx`, `src/components/Logo.jsx`, and page titles throughout `src/containers/` |\n| `REACT_APP_NOTIFICATIONS_CHECK_INTERVAL` | `src/containers/notifications/useUnreadCount.js` |\n| `REACT_APP_LANGUAGE` | `src/languages/index.js`, through `src/languages/choose.js` |\n| `REACT_APP_ASSETS` | `src/assets/index.js` |\n| `REACT_APP_ANALYTICS`, `REACT_APP_ANALYTICS_URL`, `REACT_APP_ANALYTICS_SITE_ID` | `src/utils/analytics.js` |\n| `REACT_APP_MAP_TILE_URL`, `REACT_APP_MAP_TILE_ATTRIBUTION` | `src/components/Map.jsx` |\n| `REACT_APP_LOCATION_FIXED_*` | `src/containers/locations/Add/Add.jsx`, `src/containers/locations/Read/index.jsx` |\n| The server's NodeInfo document | `src/api/nodeInfo.js` |"
+    }
+   ]
+  }
+ ]
+}

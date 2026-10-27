@@ -1,0 +1,36 @@
+{
+  "name": "anahita-mcp",
+  "version": "0.1.0",
+  "description": "Anahita's docs and API reference for AI agents: an MCP server that runs on your computer.",
+  "license": "MIT",
+  "author": "Rastin Mehr Design Studio Inc. (rmd studio) <https://www.rmdstudio.com>",
+  "homepage": "https://www.anahita.io/docs/",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/anahitasocial/anahita-mcp.git"
+  },
+  "bugs": "https://github.com/anahitasocial/anahita-mcp/issues",
+  "keywords": ["anahita", "mcp", "model-context-protocol", "fediverse", "activitypub", "atproto", "docs"],
+  "type": "module",
+  "bin": {
+    "anahita-mcp": "dist/src/index.js"
+  },
+  "files": ["dist/src", "docs/images"],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "tsc",
+    "prepare": "tsc",
+    "test": "tsc && node --test \"dist/test/*.test.js\"",
+    "start": "node dist/src/index.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.32.2",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.9.3"
+  }
+}
