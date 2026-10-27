@@ -1,0 +1,188 @@
+# The hosted anahita-mcp: one Lambda function behind an API Gateway HTTP API
+# with its own address and certificate, all in one region (ca-central-1 for
+# Anahita's copy). See docs/hosting.md.
+#
+# Nothing about a request is kept: the function logs nothing of its own,
+# Lambda's lines (when it ran, for how long) are kept for a day, and the
+# API's access logs are off.
+AWSTemplateFormatVersion: '2010-09-09'
+Description: anahita-mcp - the docs MCP server, hosted
+
+Parameters:
+  FunctionName:
+    Type: String
+    Default: anahita-mcp
+  DomainName:
+    Type: String
+    Description: The address, such as mcp.anahita.io
+  HostedZoneId:
+    Type: AWS::Route53::HostedZone::Id
+    Description: The Route 53 zone the address is in
+  Site:
+    Type: String
+    Default: https://www.anahita.io
+    Description: The website the docs and the API reference are read from
+  Concurrency:
+    Type: Number
+    Default: 2
+    MinValue: 1
+    Description: At most this many copies of the function at once. It bounds the cost
+  RequestsPerSecond:
+    Type: Number
+    Default: 10
+    Description: Requests a second the API lets through, beyond which it answers 429
+
+Resources:
+  # Checked by a record ACM adds to the zone itself.
+  Certificate:
+    Type: AWS::CertificateManager::Certificate
+    Properties:
+      DomainName: !Ref DomainName
+      ValidationMethod: DNS
+      DomainValidationOptions:
+        - DomainName: !Ref DomainName
+          HostedZoneId: !Ref HostedZoneId
+      Tags:
+        - Key: Project
+          Value: anahita-mcp
+
+  Logs:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/lambda/${FunctionName}
+      RetentionInDays: 1
+
+  Role:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal: { Service: lambda.amazonaws.com }
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: logs
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action: [logs:CreateLogStream, logs:PutLogEvents]
+                Resource: !Sub ${Logs.Arn}:*
+      Tags:
+        - Key: Project
+          Value: anahita-mcp
+
+  Function:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Ref FunctionName
+      Description: Anahita's docs and API reference for AI agents, over MCP
+      Runtime: nodejs22.x
+      Architectures: [arm64]
+      MemorySize: 512
+      Timeout: 20
+      ReservedConcurrentExecutions: !Ref Concurrency
+      Handler: index.handler
+      Role: !GetAtt Role.Arn
+      LoggingConfig:
+        LogGroup: !Ref Logs
+        LogFormat: Text
+      Environment:
+        Variables:
+          ANAHITA_SITE: !Ref Site
+          ANAHITA_MCP_CACHE: /tmp/anahita-mcp
+          PUBLIC_ORIGIN: !Sub https://${DomainName}
+      # Until deploy.sh puts the server in its place.
+      Code:
+        ZipFile: |
+          exports.handler = async () => ({ statusCode: 503, body: 'Not deployed yet\n' });
+      Tags:
+        - Key: Project
+          Value: anahita-mcp
+
+  Api:
+    Type: AWS::ApiGatewayV2::Api
+    Properties:
+      Name: !Ref FunctionName
+      ProtocolType: HTTP
+      # Only by its own address, not the execute-api one.
+      DisableExecuteApiEndpoint: true
+      Tags:
+        Project: anahita-mcp
+
+  Integration:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId: !Ref Api
+      IntegrationType: AWS_PROXY
+      IntegrationUri: !GetAtt Function.Arn
+      PayloadFormatVersion: '2.0'
+      TimeoutInMillis: 25000
+
+  Route:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref Api
+      RouteKey: $default
+      Target: !Sub integrations/${Integration}
+
+  Stage:
+    Type: AWS::ApiGatewayV2::Stage
+    Properties:
+      ApiId: !Ref Api
+      StageName: $default
+      AutoDeploy: true
+      DefaultRouteSettings:
+        ThrottlingRateLimit: !Ref RequestsPerSecond
+        ThrottlingBurstLimit: !Ref RequestsPerSecond
+
+  Permission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref Function
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub arn:${AWS::Partition}:execute-api:${AWS::Region}:${AWS::AccountId}:${Api}/*
+
+  Domain:
+    Type: AWS::ApiGatewayV2::DomainName
+    Properties:
+      DomainName: !Ref DomainName
+      DomainNameConfigurations:
+        - CertificateArn: !Ref Certificate
+          EndpointType: REGIONAL
+          SecurityPolicy: TLS_1_2
+      Tags:
+        Project: anahita-mcp
+
+  Mapping:
+    Type: AWS::ApiGatewayV2::ApiMapping
+    DependsOn: Stage
+    Properties:
+      ApiId: !Ref Api
+      DomainName: !Ref Domain
+      Stage: $default
+
+  RecordA:
+    Type: AWS::Route53::RecordSet
+    Properties:
+      HostedZoneId: !Ref HostedZoneId
+      Name: !Ref DomainName
+      Type: A
+      AliasTarget:
+        DNSName: !GetAtt Domain.RegionalDomainName
+        HostedZoneId: !GetAtt Domain.RegionalHostedZoneId
+  RecordAAAA:
+    Type: AWS::Route53::RecordSet
+    Properties:
+      HostedZoneId: !Ref HostedZoneId
+      Name: !Ref DomainName
+      Type: AAAA
+      AliasTarget:
+        DNSName: !GetAtt Domain.RegionalDomainName
+        HostedZoneId: !GetAtt Domain.RegionalHostedZoneId
+
+Outputs:
+  Address:
+    Value: !Sub https://${DomainName}/mcp

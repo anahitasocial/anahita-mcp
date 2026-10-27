@@ -1,8 +1,10 @@
 #!/usr/bin/env node
 // anahita-mcp: Anahita's docs and API reference for AI agents, over the Model
 // Context Protocol, on standard input and output. An MCP client starts it;
-// see README.md.
+// see README.md. With --http it answers over HTTP at /mcp instead, for a
+// copy others reach without installing anything.
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
+import { listen } from './http.js';
 import { createServer, VERSION } from './server.js';
 
 if (process.argv.includes('--version')) {
@@ -10,4 +12,8 @@ if (process.argv.includes('--version')) {
   process.exit(0);
 }
 
-await createServer().connect(new StdioServerTransport());
+if (process.argv.includes('--http')) {
+  listen();
+} else {
+  await createServer().connect(new StdioServerTransport());
+}

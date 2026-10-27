@@ -10,12 +10,23 @@
     "url": "git+https://github.com/anahitasocial/anahita-mcp.git"
   },
   "bugs": "https://github.com/anahitasocial/anahita-mcp/issues",
-  "keywords": ["anahita", "mcp", "model-context-protocol", "fediverse", "activitypub", "atproto", "docs"],
+  "keywords": [
+    "anahita",
+    "mcp",
+    "model-context-protocol",
+    "fediverse",
+    "activitypub",
+    "atproto",
+    "docs"
+  ],
   "type": "module",
   "bin": {
     "anahita-mcp": "dist/src/index.js"
   },
-  "files": ["dist/src", "docs/images"],
+  "files": [
+    "dist/src",
+    "docs/images"
+  ],
   "engines": {
     "node": ">=20"
   },
@@ -24,7 +35,8 @@
     "prepare": "tsc",
     "prepublishOnly": "npm test",
     "test": "tsc && node --test \"dist/test/*.test.js\"",
-    "start": "node dist/src/index.js"
+    "start": "node dist/src/index.js",
+    "bundle": "rm -rf build && esbuild src/lambda.ts --bundle --platform=node --target=node22 --format=esm --outfile=build/lambda/index.mjs --banner:js=\"import { createRequire } from 'module'; const require = createRequire(import.meta.url);\" && cd build/lambda && zip -q ../lambda.zip index.mjs"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.32.2",
@@ -32,6 +44,7 @@
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
+    "esbuild": "^0.25.12",
     "typescript": "^5.9.3"
   }
 }

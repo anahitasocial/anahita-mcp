@@ -15,27 +15,42 @@ your agent can answer from the docs as they are today, not from what it
 remembers: how to set up a site, how federation works, which route follows
 a profile and what it answers.
 
-- **Runs on your computer.** Your client starts it; nothing is installed on
-  a server, and there is no account to make.
+- **Runs on your computer.** Your client starts it, and there is no account
+  to make. Or add the hosted copy at `https://mcp.anahita.io/mcp`, with
+  nothing to install.
 - **Reads, and only reads.** Six tools, none of which changes anything.
 - **Sends nothing.** It fetches two files from www.anahita.io, keeps them
   on your computer, and searches them there. Your questions never leave
-  your machine through it.
+  your machine through it. The hosted copy keeps nothing of them either.
 - **Works offline** with what it fetched last.
 
 ## Setting it up
+
+### With nothing to install
+
+Anahita runs a copy at `https://mcp.anahita.io/mcp` (MCP's Streamable
+HTTP), in Montreal. It keeps no record of the questions or of who asked.
+
+| Client | How |
+| --- | --- |
+| Claude Code | `claude mcp add --transport http anahita https://mcp.anahita.io/mcp` |
+| Claude Desktop and claude.ai | Settings › Connectors › Add custom connector, with the address |
+| Cursor | `"anahita": { "url": "https://mcp.anahita.io/mcp" }` under `mcpServers` in `~/.cursor/mcp.json` |
+| VS Code | `"anahita": { "type": "http", "url": "https://mcp.anahita.io/mcp" }` under `servers` in `.vscode/mcp.json` |
+
+### On your computer
 
 You need [Node.js](https://nodejs.org) 20 or later. Your client runs the
 server with `npx`, which fetches it from
 [npm](https://www.npmjs.com/package/anahita-mcp) the first time.
 
-### Claude Code
+#### Claude Code
 
 ```sh
 claude mcp add anahita -- npx -y anahita-mcp
 ```
 
-### Claude Desktop
+#### Claude Desktop
 
 In Settings › Developer › Edit Config, add it to
 `claude_desktop_config.json`, then restart Claude:
@@ -51,7 +66,7 @@ In Settings › Developer › Edit Config, add it to
 }
 ```
 
-### Cursor
+#### Cursor
 
 In `~/.cursor/mcp.json`, or `.cursor/mcp.json` in a project:
 
@@ -66,7 +81,7 @@ In `~/.cursor/mcp.json`, or `.cursor/mcp.json` in a project:
 }
 ```
 
-### VS Code
+#### VS Code
 
 In `.vscode/mcp.json` in a project, or with **MCP: Add Server** from the
 command palette:
@@ -83,7 +98,7 @@ command palette:
 }
 ```
 
-### Any other client
+#### Any other client
 
 The server speaks MCP over standard input and output. The command is
 `npx -y anahita-mcp`. To run what is on `main` before it is published,
@@ -132,6 +147,12 @@ in the server, with no embeddings and no outside service.
 | `ANAHITA_SITE` | The website the two files are read from: a local build of anahita.io, say | `https://www.anahita.io` |
 | `ANAHITA_MCP_CACHE` | The folder the copies are kept in | your system's cache folder, as above |
 
+## Hosting your own
+
+`npx -y anahita-mcp --http` answers over HTTP at `/mcp` instead, for a copy
+people add by its address with nothing to install. [Hosting it](docs/hosting.md)
+says how, on any server or on AWS Lambda with `deploy/`.
+
 ## Working on it
 
 Changing the code, as a person or with an agent: begin with
@@ -154,6 +175,9 @@ TypeScript, on the official
 | `src/docs.ts` | The docs tools' answers |
 | `src/api.ts` | The API tools' answers |
 | `src/search.ts` | Search by words (BM25) |
+| `src/http.ts` | The server over HTTP, for a hosted copy, and `--http` |
+| `src/lambda.ts` | The hosted copy on AWS Lambda |
+| `deploy/` | The AWS templates and the script that deploys them |
 
 To try it against the docs as you write them, build
 [anahita.io](https://github.com/anahitasocial/anahita.io) (`yarn build`),
