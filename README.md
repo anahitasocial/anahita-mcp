@@ -115,8 +115,10 @@ overview. Every answer gives the www.anahita.io address of what it read.
 | [`www.anahita.io/docs/index.json`](https://www.anahita.io/docs/index.json) | Every page of the docs, cut into sections, written when the website is built |
 | [`www.anahita.io/api/anahita.json`](https://www.anahita.io/api/anahita.json) | The API reference, OpenAPI 3.1, made from the services' code |
 
-They are fetched when a tool first needs them, and again an hour later only
-if they have changed. The copies are kept in the cache folder of your
+The website writes them on every change to it and every night, from the
+docs of both repositories as they are on `main`, so they are a day behind
+at most. The server fetches them when a tool first needs them, and again an
+hour later only if they have changed. The copies are kept in the cache folder of your
 system: `~/Library/Caches/anahita-mcp` on macOS, `~/.cache/anahita-mcp` on
 Linux, `%LOCALAPPDATA%\anahita-mcp\Cache` on Windows. Search is by words,
 in the server, with no embeddings and no outside service.
