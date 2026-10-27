@@ -26,12 +26,13 @@ a profile and what it answers.
 ## Setting it up
 
 You need [Node.js](https://nodejs.org) 20 or later. Your client runs the
-server with `npx`, which fetches it the first time.
+server with `npx`, which fetches it from
+[npm](https://www.npmjs.com/package/anahita-mcp) the first time.
 
 ### Claude Code
 
 ```sh
-claude mcp add anahita -- npx -y github:anahitasocial/anahita-mcp
+claude mcp add anahita -- npx -y anahita-mcp
 ```
 
 ### Claude Desktop
@@ -44,7 +45,7 @@ In Settings › Developer › Edit Config, add it to
   "mcpServers": {
     "anahita": {
       "command": "npx",
-      "args": ["-y", "github:anahitasocial/anahita-mcp"]
+      "args": ["-y", "anahita-mcp"]
     }
   }
 }
@@ -59,7 +60,7 @@ In `~/.cursor/mcp.json`, or `.cursor/mcp.json` in a project:
   "mcpServers": {
     "anahita": {
       "command": "npx",
-      "args": ["-y", "github:anahitasocial/anahita-mcp"]
+      "args": ["-y", "anahita-mcp"]
     }
   }
 }
@@ -76,7 +77,7 @@ command palette:
     "anahita": {
       "type": "stdio",
       "command": "npx",
-      "args": ["-y", "github:anahitasocial/anahita-mcp"]
+      "args": ["-y", "anahita-mcp"]
     }
   }
 }
@@ -85,6 +86,7 @@ command palette:
 ### Any other client
 
 The server speaks MCP over standard input and output. The command is
+`npx -y anahita-mcp`. To run what is on `main` before it is published,
 `npx -y github:anahitasocial/anahita-mcp`.
 
 Then ask your agent something like *"How does Anahita decide what an old
