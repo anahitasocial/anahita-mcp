@@ -184,6 +184,11 @@ To try it against the docs as you write them, build
 serve its `out/` folder, and set `ANAHITA_SITE` to where it is served. The
 tests use a few real pages and routes, in `test/fixtures/`.
 
+## Security
+
+To report a vulnerability, see [SECURITY.md](SECURITY.md). Please don't open
+a public issue.
+
 ## Licence
 
 [MIT](LICENSE). Anahita Services is under the GNU AGPL-3.0 and Anahita Web
