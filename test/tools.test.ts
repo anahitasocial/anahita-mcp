@@ -100,3 +100,20 @@ test('list_endpoints: a kind of profile by its name, or all of them by the servi
   assert.match(listEndpoints(sections, { service: 'actor', query: 'events' }), /\/events\//);
   assert.match(listEndpoints(sections, { service: 'nothing' }), /No service called/);
 });
+
+test('read_endpoint finds a route that ends in a slash, asked for with it or without', () => {
+  const slashed = {
+    openapi: '3.1.0',
+    info: { title: 'Anahita', version: 'dev' },
+    tags: [{ name: 'events', description: 'Events' }],
+    paths: {
+      '/events/': { get: { tags: ['events'], summary: 'What is on', responses: {} } },
+      '/events/{id}/admins/': { get: { tags: ['events'], summary: "An event's admins", responses: {} } },
+    },
+  } as unknown as OpenApi;
+
+  assert.match(readEndpoint(slashed, 'GET', '/events/'), /# What is on/);
+  assert.match(readEndpoint(slashed, 'GET', '/events'), /# What is on/);
+  assert.match(readEndpoint(slashed, 'GET', '/events/7/admins'), /# An event's admins/);
+  assert.match(readEndpoint(api, 'POST', '/abuse-reports/'), /`POST \/abuse-reports\/`/);
+});

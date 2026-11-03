@@ -82,10 +82,18 @@ export function listEndpoints(api: OpenApi, { service, query }: { service?: stri
 // ("/people/{id}") or as it is called ("/people/12").
 function findRoute(api: OpenApi, method: string, path: string): Route | undefined {
   const all = routes(api).filter((r) => r.method === method.toLowerCase());
-  const bare = path.trim().replace(/\?.*$/, '').replace(/\/+$/, '') || '/';
+  // A slash at the end is no part of which route it is, on either side: the
+  // reference writes many with one (`/events/`), and people with or without.
+  const trim = (p: string) => p.replace(/\/+$/, '') || '/';
+  const asked = path.trim().replace(/\?.*$/, '');
+  const bare = trim(asked);
   const pattern = (p: string) =>
-    new RegExp(`^${p.split('/').map((part) => (/^\{.+\}$/.test(part) ? '[^/]+' : part.replace(/[.*+?^$()|[\]\\{}]/g, '\\$&'))).join('/')}$`);
-  return all.find((r) => r.path === bare) || all.find((r) => pattern(r.path).test(bare));
+    new RegExp(`^${trim(p).split('/').map((part) => (/^\{.+\}$/.test(part) ? '[^/]+' : part.replace(/[.*+?^$()|[\]\\{}]/g, '\\$&'))).join('/')}$`);
+  return (
+    all.find((r) => r.path === asked) ||
+    all.find((r) => trim(r.path) === bare) ||
+    all.find((r) => pattern(r.path).test(bare))
+  );
 }
 
 export function readEndpoint(api: OpenApi, method: string, path: string): string {
