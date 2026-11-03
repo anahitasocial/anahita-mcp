@@ -6,7 +6,7 @@ import { listEndpoints, readEndpoint, readShape } from './api.js';
 import { listDocs, readDoc, searchDocs } from './docs.js';
 import { Store } from './store.js';
 
-export const VERSION = '0.1.0';
+export const VERSION = '1.0.0';
 
 const INSTRUCTIONS = `Anahita is open-source social software that an organisation runs for its own community, federating over ActivityPub (the fediverse) and the AT Protocol (Bluesky). Its docs are in two parts: "services" (Anahita Services, the Go services and their API: running a site, the concepts, federation, building on it) and "web" (Anahita Web, the React app).
 
