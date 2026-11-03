@@ -115,7 +115,7 @@ does it send back?"*
 | `search_docs(query, source?, limit?)` | The sections of the docs that match, best first, each with the page and section to read and a few lines of it |
 | `list_docs(source?)` | Every page, in its groups, with its sections |
 | `read_doc(page, section?)` | A page as Markdown, or one section with those under it |
-| `list_endpoints(service?, query?)` | The API's services in their groups; one service's routes; or the routes that match some words |
+| `list_endpoints(service?, query?)` | The API's services in their groups; one service's routes, or one kind of profile's (`groups`, `events`); or the routes that match some words |
 | `read_endpoint(method, path)` | One route in full: who may call it, its parameters and body, and every answer. The path as the reference has it (`/actors/{alias}`) or as it is called (`/actors/ana`) |
 | `read_shape(name)` | One shape the API takes or answers with, and its fields |
 

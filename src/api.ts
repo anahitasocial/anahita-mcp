@@ -31,10 +31,17 @@ function routes(api: OpenApi): Route[] {
   );
 }
 
-// "auth", "auth-service" and "Auth-Service" all name auth-service.
-function findService(api: OpenApi, name: string): string | undefined {
-  const wanted = name.trim().toLowerCase().replace(/-service$/, '');
-  return (api.tags || []).map((t) => t.name).find((tag) => tag.toLowerCase().replace(/-service$/, '') === wanted);
+// "auth", "auth-service" and "Auth-Service" all name auth-service. A service
+// shown as sections (actor-service's profiles, people, groups, events and
+// websites, each a tag with x-service) is found by a section's name, or by
+// its own name for all of them.
+function findServices(api: OpenApi, name: string): string[] {
+  const bare = (text: string) => text.trim().toLowerCase().replace(/-service$/, '');
+  const wanted = bare(name);
+  const tags = (api.tags || []) as { name: string; 'x-service'?: string }[];
+  const one = tags.find((tag) => bare(tag.name) === wanted);
+  if (one) return [one.name];
+  return tags.filter((tag) => tag['x-service'] && bare(tag['x-service']) === wanted).map((tag) => tag.name);
 }
 
 const line = (r: Route) => `- \`${r.method.toUpperCase()} ${r.path}\`: ${r.op.summary || r.op.operationId || ''}`;
@@ -44,16 +51,20 @@ const line = (r: Route) => `- \`${r.method.toUpperCase()} ${r.path}\`: ${r.op.su
 export function listEndpoints(api: OpenApi, { service, query }: { service?: string; query?: string } = {}): string {
   const all = routes(api);
   if (query) {
-    const keep = service ? findService(api, service) : undefined;
-    const found = new Index(all).search(query, 20, (r) => !keep || r.service === keep);
+    const keep = service ? findServices(api, service) : [];
+    const found = new Index(all).search(query, 20, (r) => !keep.length || keep.includes(r.service));
     if (!found.length) return `No route matches "${query}".`;
     return found.map(({ item }) => `${line(item)} (${item.service})`).join('\n');
   }
   if (service) {
-    const tag = findService(api, service);
-    if (!tag) return `No service called "${service}". Call list_endpoints without arguments for the services.`;
-    const description = api.tags?.find((t) => t.name === tag)?.description;
-    return [`# ${tag}`, description ? `\n${description}\n` : '', ...all.filter((r) => r.service === tag).map(line)].join('\n');
+    const tags = findServices(api, service);
+    if (!tags.length) return `No service called "${service}". Call list_endpoints without arguments for the services.`;
+    return tags
+      .map((tag) => {
+        const description = api.tags?.find((t) => t.name === tag)?.description;
+        return [`# ${tag}`, description ? `\n${description}\n` : '', ...all.filter((r) => r.service === tag).map(line)].join('\n');
+      })
+      .join('\n\n');
   }
   const count = (tag: string) => all.filter((r) => r.service === tag).length;
   const described = new Map((api.tags || []).map((t) => [t.name, t.description || '']));

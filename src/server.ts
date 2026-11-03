@@ -75,7 +75,7 @@ export function createServer(store = new Store()): McpServer {
       title: 'List the API routes',
       description: "Lists the API's services in their groups; with a service, its routes; with words, the routes that match them.",
       inputSchema: {
-        service: z.string().optional().describe('A service, such as "auth" or "socialgraph-service"'),
+        service: z.string().optional().describe('A service or a kind of profile, such as "auth", "socialgraph-service", "groups" or "events"'),
         query: z.string().optional().describe('Words to find a route by, such as "follow a group"'),
       },
       annotations: READ_ONLY,

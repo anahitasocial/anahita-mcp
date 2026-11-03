@@ -75,3 +75,28 @@ test('read_shape: a shape and its fields, whatever its case', () => {
   assert.match(readShape(api, 'refusal'), /^# Refusal/);
   assert.match(readShape(api, 'Case'), /Did you mean: .*abusereport\.Case/);
 });
+
+test('list_endpoints: a kind of profile by its name, or all of them by the service', () => {
+  const op = (tag: string, summary: string) => ({ tags: [tag], summary, responses: {} });
+  const sections = {
+    openapi: '3.1.0',
+    info: { title: 'Anahita', version: 'dev' },
+    tags: [
+      { name: 'groups', description: 'Groups', 'x-service': 'actor-service' },
+      { name: 'events', description: 'Events', 'x-service': 'actor-service' },
+    ],
+    'x-tagGroups': [{ name: 'Profiles', tags: ['groups', 'events'] }],
+    paths: {
+      '/groups/': { get: op('groups', 'Groups') },
+      '/events/': { get: op('events', 'What is on') },
+    },
+  } as unknown as OpenApi;
+
+  const groups = listEndpoints(sections, { service: 'groups' });
+  assert.match(groups, /`GET \/groups\/`/);
+  assert.doesNotMatch(groups, /\/events\//);
+  const actor = listEndpoints(sections, { service: 'actor-service' });
+  assert.match(actor, /# groups[\s\S]*# events/);
+  assert.match(listEndpoints(sections, { service: 'actor', query: 'events' }), /\/events\//);
+  assert.match(listEndpoints(sections, { service: 'nothing' }), /No service called/);
+});
