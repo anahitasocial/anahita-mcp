@@ -1,3 +1,4 @@
+<img src="docs/images/agents.svg" alt="A friendly robot" width="120" align="right">
 <img src="docs/images/anahita-logo.svg" alt="Anahita" width="33%">
 
 # Anahita MCP
